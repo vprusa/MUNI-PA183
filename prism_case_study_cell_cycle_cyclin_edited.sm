@@ -1,0 +1,61 @@
+// cell cycle control in eukaryotes
+// based on the stochastic pi caclulus model of Lecca and Priami
+
+ctmc
+
+// initial number of molecules
+const int MAX_AMOUNT;
+const int pRB_MAX = MAX_AMOUNT;
+const int E2F1_MAX = MAX_AMOUNT;
+
+// base rates of reactions
+const double pst_gene_pRB = 1;
+const double pst_gene_E2F1 = 1;
+const double pst_prot_pRB = 1;
+const double pst_prot_E2F1 = 0.05;
+const double pst_prot_pRB_trans_fact = 10/100;
+const double pst_prot_E2F1_trans_fact = 10/100;
+// (gama_A,gama_B)∈[0.005,0.1]×[0.05,0.1].
+//const double pst_prot_deg_pRB = 0.1;
+const double pst_prot_deg_pRB;
+//const double pst_prot_deg_E2F1 = 0.1;
+const double pst_prot_deg_E2F1;
+
+// module increasing and decreasing amount of proteins pRB and E2F1
+module mod_pRB_E2F1
+	prot_pRB  : [0..pRB_MAX] init 0;
+	prot_E2F1   : [0..E2F1_MAX] init 0;
+
+	[lab_gene_pRB] pst_gene_pRB > 0 & prot_pRB < pRB_MAX -> pst_gene_pRB : (prot_pRB'=prot_pRB+1);
+	[lab_gene_E2F1] pst_gene_E2F1 > 0 & prot_E2F1 < E2F1_MAX -> pst_gene_E2F1 : (prot_E2F1'=prot_E2F1+1);
+
+	[lab_prot_E2F1_trans_fact] pst_prot_pRB > 0 & prot_E2F1 > 0 & prot_pRB < pRB_MAX ->  (pst_prot_E2F1_trans_fact * prot_E2F1): (prot_pRB'=prot_pRB+1);
+	[lab_prot_pRB_trans_fact] pst_prot_pRB > 0 & prot_pRB > 0 & prot_pRB > 0-> (pst_prot_pRB_trans_fact * prot_pRB): (prot_pRB'=prot_pRB-1);
+	[lab_prot_E2F1_trans_fact] pst_prot_pRB > 0 & prot_pRB > 0 -> (pst_prot_pRB_trans_fact * prot_pRB): (prot_pRB'=prot_pRB-1);
+
+	[lab_prot_E2F1] pst_prot_pRB > 0 & prot_E2F1 > 0 -> pst_prot_pRB_trans_fact : (prot_E2F1'=prot_E2F1-1);
+
+	[lab_prot_deg_pRB] pst_prot_deg_pRB > 0 & prot_pRB > 0 -> pst_prot_deg_pRB : (prot_pRB'=prot_pRB-1);
+	[lab_prot_deg_E2F1] pst_prot_deg_E2F1 > 0 & prot_E2F1 > 0 -> pst_prot_deg_E2F1 : (prot_E2F1'=prot_E2F1-1);
+endmodule
+
+//rewards "rew_diff_prots"
+//	 true   : prot_E2F1 - prot_pRB;
+//endrewards
+
+rewards "rew_ration_prots"
+	 //(prot_E2F1 != 0 )  : (E2F1_MAX/2) * ( prot_pRB / prot_E2F1 );
+	 (prot_E2F1 != 0 )  :  ( prot_pRB / prot_E2F1 );
+endrewards
+
+
+//rewards "switch_on"
+	//(prot_pRB < pRB_MAX*0.7 ) : prot_E2F1;
+	//( prot_E2F1 > E2F1_MAX*0.8  ) : 1;
+//endrewards
+
+//rewards "switch_off"
+	//(prot_pRB > pRB_MAX*0.3 & prot_E2F1 < E2F1_MAX*0.2 ) : prot_E2F1;
+	//(prot_E2F1 < E2F1_MAX*0.8 ) : 1;
+//	(prot_pRB < pRB_MAX*0.4 ) : 1;
+//endrewards
